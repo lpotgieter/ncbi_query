@@ -73,7 +73,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description='Fetch NCBI BioSample data for a genus')
     parser.add_argument('-g', '--genus', required=True, help='Genus name to search for (e.g., Tilletia)')
     parser.add_argument('-o', '--output', default='samples.csv', help='Output CSV filename (default: samples.csv)')
-    parser.add_argument('-n', '--num-samples', type=int, default=10, help='Number of samples to process (default: 10)')
+    parser.add_argument('-n', '--num-samples', type=int, default=None, help='Number of samples to process (default: all)')    
     parser.suggest_on_error = True
     return parser.parse_args()
 
@@ -84,6 +84,15 @@ resp_json = search_genus(args.genus)
 count, ids = extract_search_results(resp_json)
 print(f"Found {count} samples")
 print(f"Processing first {args.num_samples} IDs: {ids[:args.num_samples]}")
+
+# If no limit specified, use all samples
+if args.num_samples is None:
+    samples_to_process = ids
+    print(f"Processing all {len(ids)} samples")
+else:
+    samples_to_process = ids[:args.num_samples]
+    print(f"Processing first {args.num_samples} samples")
+
 
 # Collect all sample data
 all_samples = []
