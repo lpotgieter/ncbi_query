@@ -1,4 +1,5 @@
 import requests
+import requests.exceptions
 import argparse
 import xml.etree.ElementTree as ET
 import csv
@@ -6,32 +7,45 @@ import os
 
 # return list of sample IDs used later to fetch metadata
 def search_genus(genus):
-    response = requests.get(f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=biosample&term={genus}&retmode=json")
-    return response.json()
+    try:
+        response = requests.get(f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=biosample&term={genus}&retmode=json")
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error searching for genus '{genus}': {e}")
+        return None
 
 # counts how many hits there are, and lists first 5 IDs to see if it worked properly
 def extract_search_results(search_response):
-    count = search_response['esearchresult']['count']
+    count = int(search_response['esearchresult']['count'])
     ids = search_response['esearchresult']['idlist']
     return count, ids
 
 # fetches xml if not present in data/
 def fetch_sample_metadata(sample_id, cache_dir="data/"):
+    import os
     os.makedirs(cache_dir, exist_ok=True)
+    
     cache_file = os.path.join(cache_dir, f"{sample_id}.xml")
-
+    
     if os.path.exists(cache_file):
         with open(cache_file, 'r') as f:
             xml_content = f.read()
-        print(f"Loaded {sample_id} from cache!")
+        print(f"Loaded {sample_id} from cache")
+        return xml_content
     else:
-        response = requests.get(f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=biosample&id={sample_id}&retmode=xml")
-        xml_content = response.text
-
-        with open(cache_file, 'w') as f:
-            f.write(xml_content)
-        print(f"Downloaded and cached {sample_id}")
-    return xml_content
+        try:
+            response = requests.get(f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=biosample&id={sample_id}&retmode=xml")
+            response.raise_for_status()
+            xml_content = response.text
+            
+            with open(cache_file, 'w') as f:
+                f.write(xml_content)
+            print(f"Downloaded and cached {sample_id}")
+            return xml_content
+        except requests.exceptions.RequestException as e:
+            print(f"Failed to download {sample_id}: {e}")
+            return None 
 
 # parse xml and extract info 
 def parse_sample_xml(xml_content):
@@ -78,10 +92,21 @@ def parse_arguments():
     return parser.parse_args()
 
 
- # Main       
+# Main       
 args = parse_arguments()
 resp_json = search_genus(args.genus)
+
 count, ids = extract_search_results(resp_json)
+
+if resp_json is None:
+    print(f"Error: Could not search for genus '{args.genus}'. Please check your internet connection.")
+    exit(1)
+
+if count == 0:
+    print(f"Error: No samples found for genus '{args.genus}'. Please check the genus name.")
+    exit(1)
+
+
 print(f"Found {count} samples")
 print(f"Processing first {args.num_samples} IDs: {ids[:args.num_samples]}")
 
@@ -96,11 +121,26 @@ else:
 
 # Collect all sample data
 all_samples = []
-for sample_id in ids[:args.num_samples]:
+failed_ids = []
+
+for sample_id in samples_to_process:  # use samples_to_process instead of ids[:args.num_samples]
     xml_content = fetch_sample_metadata(sample_id)
+    
+    if xml_content is None:
+        failed_ids.append(sample_id)
+        continue  # skip to next sample
+    
     data = parse_sample_xml(xml_content)
     data['sample_id'] = sample_id
     all_samples.append(data)
+
+if failed_ids:
+    print(f"Warning: Failed to download {len(failed_ids)} samples")
+    with open("failed_downloads.log", "w") as f:
+        for failed_id in failed_ids:
+            f.write(f"{failed_id}\n")
+    print("Failed sample IDs written to failed_downloads.log")
+
 
 print(f"Collected {len(all_samples)} samples")
 write_to_csv(all_samples, args.output)
