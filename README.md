@@ -47,5 +47,6 @@ A project like this is never truly done! There are
   ```
   pixi run datasets download genome accession --version
   ```
-  Pulling in a bash loop to iterate through accessions in a list and parsing each line into the accession flag through variables would not be difficult if a user would like to automate this!
-4) It might also be useful to be able to run this natively on more than one species, so inputting a list and running over the list of species one at a time, and outputting summaries for each species.
+  - Pulling in a bash loop to iterate through accessions in a list and parsing each line into the accession flag through variables would not be difficult if a user would like to automate this!
+
+4) It might also be useful to be able to run this natively on more than one species, so inputting a list and running over the list of species one at a time, and outputting summaries for each species.mpl
