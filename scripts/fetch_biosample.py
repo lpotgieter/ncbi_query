@@ -6,9 +6,9 @@ import csv
 import os
 
 # return list of sample IDs used later to fetch metadata
-def search_genus(genus):
+def search_genus(genus, max_results=10000):
     try:
-        response = requests.get(f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=biosample&term={genus}&retmode=json")
+        response = requests.get(f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=biosample&term={genus}&retmode=json&retmax={max_results}")
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
@@ -66,8 +66,8 @@ def parse_sample_xml(xml_content):
         if attr.get('attribute_name') == 'platform':
             data["platform"] = attr.text
 
-        owner = biosample.find('Owner/Name')
-        data['owner_name'] = owner.text if owner is not None else None
+    owner = biosample.find('Owner/Name')
+    data['owner_name'] = owner.text if owner is not None else None
     return data
 
 # export to csv in cwd called tilleria_samples.csv
@@ -108,7 +108,7 @@ if count == 0:
 
 
 print(f"Found {count} samples")
-print(f"Processing first {args.num_samples} IDs: {ids[:args.num_samples]}")
+print(f"Retrieved {len(ids)} sample IDs")
 
 # If no limit specified, use all samples
 if args.num_samples is None:
@@ -123,7 +123,8 @@ else:
 all_samples = []
 failed_ids = []
 
-for sample_id in samples_to_process:  # use samples_to_process instead of ids[:args.num_samples]
+for i, sample_id in enumerate(samples_to_process, 1):
+    print(f"Processing sample {i}/{len(samples_to_process)}: {sample_id}")
     xml_content = fetch_sample_metadata(sample_id)
     
     if xml_content is None:
@@ -144,3 +145,4 @@ if failed_ids:
 
 print(f"Collected {len(all_samples)} samples")
 write_to_csv(all_samples, args.output)
+print(f"Data written to {args.output}")
