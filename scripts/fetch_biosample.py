@@ -65,7 +65,10 @@ def parse_sample_xml(xml_content):
             data["geo_loc_name"] = attr.text
         if attr.get('attribute_name') == 'platform':
             data["platform"] = attr.text
-
+    
+    sra_id = biosample.find('.//Id[@db="SRA"]')
+    data['SRA'] = sra_id.text if sra_id is not None else None
+    
     owner = biosample.find('Owner/Name')
     data['owner_name'] = owner.text if owner is not None else None
     return data
