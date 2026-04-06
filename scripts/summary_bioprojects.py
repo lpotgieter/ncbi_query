@@ -7,8 +7,10 @@ def load_sample_data(csv_file):
     df = pd.read_csv(csv_file)
     return df
 
-# bar plot counting number of species
 def plot_species_counts(df, prefix):
+    """
+   Plot species summaries from collected DF
+    """
     species_counts = df['species'].value_counts()
     plt.figure()
     sns.countplot(data=df, x='species', order=df['species'].value_counts().index)
