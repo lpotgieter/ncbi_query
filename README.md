@@ -14,6 +14,15 @@ and install the environment from the repository directory
 pixi install
 ```
 
+### Example Data
+There are example files in the `tests` folder.
+|File|Description
+|-|-|
+|`example_genera.txt`|list of genera to test `get_info_species_list` task|
+|`example_tilletia.csv`|expected output from `fetch_biosample.py`|
+|`example_tilletia_test_summary.csv`|expected output summary data from `summary_bioprojects.py`|
+|`example_tilletia_test_species_counts.png`|expected output count plot from `summary_bioprojects.py`|
+
 ### Running the scripts
 The codebase has several different components that can be run one by one from the CLI, or through Pixi tasks
 
@@ -37,6 +46,17 @@ pixi run python scripts/summary_bioprojects.py --csv-file tests/tilletia.csv --p
 ```
 
 #### As Pixi tasks
+Right now, you can edit the species of interest in the `pixi.toml` file and simply run the following to run the tasks instead of manually executing the commands
+```
+pixi run get_info_one_species
+pixi run summarise_bioprojects
+```
+
+To run this on multiple genera of interest, there's a section of Pixi tasks that calls a loop over a list with genera, one per line. In the tasks, you can change the genus list, and the number of queries to return. The `summarise_bioprojects` can then be run on each CSV.
+
+```
+pixi run get_info_species_list
+```
 
 ## Future Additions
 A project like this is never truly done! There are 

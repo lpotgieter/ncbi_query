@@ -1,12 +1,16 @@
 [workspace]
 channels = ["conda-forge", "bioconda"]
 name = "ncbi_query"
-platforms = ["osx-arm64", "linux-64"]
+platforms = ["osx-arm64", "linux-64", "osx-64"]
 version = "0.1.0"
 
 [tasks]
-get_info_one_species = {cmd = "python scripts/fetch_biosample.py --genus Tilletia --num-samples 266 --output tests/tilletia.csv"}
+get_info_one_species = {cmd = "python scripts/fetch_biosample.py --genus Tilletia --num-samples 10 --output tests/tilletia.csv"}
 summarise_bioprojects = {cmd = "python scripts/summary_bioprojects.py --csv-file tests/tilletia.csv --prefix tests/tilletia"}
+
+# Same workflow as above, but looping through lists of genera
+# You can specify the list of genera you wish to search, as well as the number of queries to return. Here, 7. If left blank, then no limit
+get_info_species_list = {cmd = "bash scripts/ncbi_query_multiple_genera.sh tests/example_genera.txt 7"}
 
 [dependencies]
 python = ">=3.14.3,<3.15"
